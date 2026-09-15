@@ -4,12 +4,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const labels={submitted:'Submitted',under_review:'Under Review',needs_more_info:'Needs More Information',needs_information:'Needs More Information',approved:'Approved',ready_for_pickup:'Ready for Pickup',ready:'Ready for Pickup',released:'Released',completed:'Released',rejected:'Rejected',not_found:'Not Found'};
 let active=location.pathname.includes('request-status')?'track':'request';
 
-async function apiCall(path,opt={}){
-    let r=await fetch(api+path,{credentials:'same-origin',headers:{'Accept':'application/json',...(opt.body instanceof FormData?{}:{'Content-Type':'application/json'}),...(opt.headers||{})},...opt});
-    let body=await r.json().catch(()=>({error:'Server returned an invalid response'}));
-    if(!r.ok)throw Error(body.error||'Request failed');
-    return body;
-}
+async function apiCall(path,opt={}){ return window.ajax.request(api+path,opt); }
 
 function field(label,name,type='text',extra=''){
     return `<div><label class="field-label block mb-1">${label}</label><input name="${name}" type="${type}" class="w-full border border-slate2-300 rounded-md p-2.5 text-sm" ${extra}></div>`;
