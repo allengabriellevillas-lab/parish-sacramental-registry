@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Certificate Request Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config={theme:{extend:{fontFamily:{sans:['Libre Franklin','sans-serif'],serif:['Source Serif 4','serif']},colors:{ink:'#151b2b',navy:{950:'#0b1220',900:'#101a2e',800:'#16223b',700:'#1e2e4d'},slate2:{700:'#3f4a60',500:'#64738c',300:'#c3cbd9',100:'#eceff4'},paper:'#f7f5f0',gold:{700:'#8a6a24',600:'#a9812f',400:'#c9a04f',100:'#f3e8d0'},wine:{700:'#5e1f29',600:'#7a2734',100:'#f3e0e3'}}}}}
+    </script>
+    <style>
+        body{font-family:'Libre Franklin',sans-serif;background:#eef0f4;color:#151b2b}.font-cert{font-family:'Source Serif 4',serif}.field-label{font-size:11px;letter-spacing:.02em;color:#64738c;font-weight:700}input,select,textarea{outline:none}input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px #c9a04f55;border-color:#a9812f}.portal-tab.active{background:#16223b;color:#fff}.status-dot{width:10px;height:10px;border-radius:999px;background:#c3cbd9}.status-dot.done{background:#a9812f}
+    </style>
+</head>
+<body class="min-h-screen">
+    <header class="bg-white border-b border-slate2-300/70">
+        <div class="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between gap-4">
+            <a href="/certificate-request" class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-full border border-gold-400 text-gold-700 grid place-items-center font-cert text-lg">&#10013;</span>
+                <span>
+                    <strong class="block leading-tight">Parish Certificate Portal</strong>
+                    <small class="text-slate2-500">Sacramental certificate requests</small>
+                </span>
+            </a>
+            <a href="/" class="text-sm font-semibold text-gold-700 hover:text-gold-600">Staff sign in</a>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-5 py-6 lg:py-8">
+        <div class="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(340px,.95fr)] gap-6 items-start">
+            <section class="bg-white border border-slate2-300/70 rounded-lg shadow-sm overflow-hidden">
+                <div class="p-5 md:p-6 border-b border-slate2-100">
+                    <div class="flex flex-wrap gap-2 mb-5">
+                        <button id="request-tab" class="portal-tab active px-4 py-2 rounded-md text-sm font-semibold">Request Certificate</button>
+                        <button id="track-tab" class="portal-tab px-4 py-2 rounded-md text-sm font-semibold bg-paper text-slate2-700">Track Request</button>
+                    </div>
+                    <h1 class="text-2xl font-semibold">Request a sacramental certificate</h1>
+                    <p class="text-sm text-slate2-500 mt-1">Submit the details parish staff need to verify the record. You will receive a tracking code after submission.</p>
+                </div>
+                <div id="portal-content" class="p-5 md:p-6"></div>
+            </section>
+            <aside class="bg-white border border-slate2-300/70 rounded-lg shadow-sm overflow-hidden">
+                <img src="assets/certificate-request-hero.png" alt="Parish registry desk" class="w-full aspect-[4/3] object-cover">
+                <div class="p-5">
+                    <h2 class="font-cert text-2xl font-semibold">Private by design</h2>
+                    <p class="text-sm text-slate2-600 mt-2 leading-6">Public visitors can submit requests and check status, but sacramental records remain visible only to authorized parish staff.</p>
+                    <dl class="grid grid-cols-3 gap-3 mt-5 text-center">
+                        <div class="bg-paper rounded-md p-3"><dt class="text-xs text-slate2-500">Step 1</dt><dd class="text-sm font-semibold mt-1">Submit</dd></div>
+                        <div class="bg-paper rounded-md p-3"><dt class="text-xs text-slate2-500">Step 2</dt><dd class="text-sm font-semibold mt-1">Verify</dd></div>
+                        <div class="bg-paper rounded-md p-3"><dt class="text-xs text-slate2-500">Step 3</dt><dd class="text-sm font-semibold mt-1">Release</dd></div>
+                    </dl>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <script src="certificate-request.js"></script>
+</body>
+</html>
