@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{CertificateIssuanceLog, CertificateRequest, SacramentalRecord};
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -187,8 +188,10 @@ class CertificateRequestController extends Controller
     {
         $status = $request->query('status', 'all');
         $q = trim((string) $request->query('q', ''));
+        $counts = CertificateRequest::select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status');
         $rows = CertificateRequest::with(['record.person'])
             ->when(in_array($status, $this->statuses, true), fn ($x) => $x->where('status', $status))
+            ->when($status === 'open', fn ($x) => $x->whereIn('status', ['submitted', 'under_review', 'needs_more_info', 'approved']))
             ->when($q !== '', fn ($x) => $x->where(function ($w) use ($q) {
                 $w->where('tracking_code', 'like', "%$q%")
                     ->orWhere('requester_name', 'like', "%$q%")
@@ -200,7 +203,14 @@ class CertificateRequestController extends Controller
             ->latest('submitted_at')
             ->get();
 
-        return response()->json(['data' => $rows->map(fn ($row) => $this->shape($row))->values(), 'meta' => ['total' => $rows->count()]]);
+        return response()->json(['data' => $rows->map(fn ($row) => $this->shape($row))->values(), 'meta' => [
+            'total' => $rows->count(),
+            'counts' => [
+                'all' => (int) $counts->sum(),
+                'open' => (int) collect(['submitted', 'under_review', 'needs_more_info', 'approved'])->sum(fn ($status) => $counts[$status] ?? 0),
+                ...collect($this->statuses)->mapWithKeys(fn ($status) => [$status => (int) ($counts[$status] ?? 0)])->all(),
+            ],
+        ]]);
     }
 
     public function show(CertificateRequest $certificateRequest)
@@ -254,6 +264,62 @@ class CertificateRequestController extends Controller
             'Content-Type' => Storage::disk('local')->mimeType($certificateRequest->attachment_path) ?: 'application/octet-stream',
             'Content-Disposition' => 'inline; filename="' . addslashes($name) . '"',
         ]);
+    }
+
+    public function matches(CertificateRequest $certificateRequest)
+    {
+        $lastName = $certificateRequest->person_last_name;
+        $firstName = $certificateRequest->person_first_name;
+        $dob = $certificateRequest->person_date_of_birth?->format('Y-m-d');
+        $eventYear = $certificateRequest->event_date?->format('Y') ?: $certificateRequest->event_year;
+
+        $rows = SacramentalRecord::with('person')
+            ->where('sacrament_type', $certificateRequest->sacrament_type)
+            ->whereHas('person', function ($q) use ($lastName, $firstName, $dob) {
+                $q->where('last_name', 'like', "%$lastName%")
+                    ->orWhere('first_name', 'like', "%$firstName%");
+                if ($dob) {
+                    $q->orWhere('date_of_birth', $dob);
+                }
+            })
+            ->get()
+            ->map(function ($record) use ($certificateRequest, $lastName, $firstName, $dob, $eventYear) {
+                $person = $record->person;
+                $score = 0;
+                $score += strcasecmp($person->last_name, $lastName) === 0 ? 40 : (stripos($person->last_name, $lastName) !== false ? 20 : 0);
+                $score += strcasecmp($person->first_name, $firstName) === 0 ? 25 : (stripos($person->first_name, $firstName) !== false ? 10 : 0);
+                $score += $dob && $person->date_of_birth?->format('Y-m-d') === $dob ? 25 : 0;
+                $score += $eventYear && $record->event_date?->format('Y') === $eventYear ? 10 : 0;
+
+                return [
+                    'id' => $record->id,
+                    'score' => $score,
+                    'sacrament' => $record->sacrament_type,
+                    'eventDate' => $record->event_date?->format('Y-m-d'),
+                    'book' => $record->book_number,
+                    'page' => $record->page_number,
+                    'line' => $record->line_number,
+                    'personName' => trim($person->first_name . ' ' . $person->middle_name . ' ' . $person->last_name),
+                    'dob' => $person->date_of_birth?->format('Y-m-d'),
+                    'parents' => trim(($person->father_name ?: 'Father not listed') . ' / ' . ($person->mother_maiden_name ?: 'Mother not listed')),
+                ];
+            })
+            ->sortByDesc('score')
+            ->take(10)
+            ->values();
+
+        return response()->json(['data' => $rows]);
+    }
+
+    public function claimSlip(CertificateRequest $certificateRequest)
+    {
+        $certificateRequest->load('record.person');
+
+        return Pdf::loadView('certificate_requests.claim-slip', [
+            'request' => $certificateRequest,
+            'statusLabel' => ucwords(str_replace('_', ' ', $certificateRequest->status)),
+            'today' => now()->format('F j, Y'),
+        ])->setPaper('letter', 'portrait')->stream('request-' . $certificateRequest->tracking_code . '-claim-slip.pdf');
     }
 
     public function issue(Request $request, CertificateRequest $certificateRequest)
