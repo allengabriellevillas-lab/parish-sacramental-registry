@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{AuthController,RecordController,IssuanceController,ImportController,SettingsController,CertificateTemplateController,ProfileController,CertificateRequestController};
 
-Route::get('/', fn()=>response()->file(public_path('parish-registry.html')));
+Route::get('/', fn()=>response()->file(public_path('public-home.html')));
+Route::get('/staff', fn()=>response()->file(public_path('parish-registry.html')));
 Route::get('/certificate-request', fn()=>response()->file(public_path('certificate-request.html')));
 Route::get('/request-status', fn()=>response()->file(public_path('certificate-request.html')));
 Route::prefix('api/v1')->group(function(){
