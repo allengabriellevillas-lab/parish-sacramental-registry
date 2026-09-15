@@ -8,9 +8,17 @@ class CertificateRequest extends Model
 {
     protected $fillable = [
         'tracking_code',
+        'reference_code',
         'sacrament_type',
         'status',
         'requester_name',
+        'requestor_name',
+        'requestor_email',
+        'requestor_phone',
+        'relationship',
+        'subject_name',
+        'subject_approx_date',
+        'supporting_doc_path',
         'requester_email',
         'requester_phone',
         'relationship_to_person',

@@ -5,8 +5,8 @@ use App\Http\Controllers\{AuthController,RecordController,IssuanceController,Imp
 
 Route::get('/', fn()=>response()->file(public_path('public-home.html')));
 Route::get('/staff', fn()=>response()->file(public_path('parish-registry.html')));
-Route::get('/certificate-request', fn()=>response()->file(public_path('certificate-request.html')));
-Route::get('/request-status', fn()=>response()->file(public_path('certificate-request.html')));
+Route::redirect('/certificate-request', '/#request');
+Route::redirect('/request-status', '/#request');
 Route::prefix('api/v1')->group(function(){
  Route::post('auth/login',[AuthController::class,'login']);
  Route::post('certificate-requests',[CertificateRequestController::class,'store']);

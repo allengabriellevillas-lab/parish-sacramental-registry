@@ -6,6 +6,7 @@ use App\Models\{CertificateIssuanceLog, CertificateRequest, SacramentalRecord};
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -125,9 +126,11 @@ class CertificateRequestController extends Controller
             $attachmentName = $file->getClientOriginalName();
         }
 
-        $certificateRequest = DB::transaction(function () use ($request, $tracking, $attachmentPath, $attachmentName) {
-            $row = CertificateRequest::create([
+        $payload = [
                 'tracking_code' => $tracking,
+                // Older installations used reference_code as their required
+                // public identifier. Keep it in sync with the tracking code.
+                'reference_code' => $tracking,
                 'sacrament_type' => $this->clean($request->input('sacrament_type')),
                 'requester_name' => $this->clean($request->input('requester_name')),
                 'requester_email' => $this->clean($request->input('requester_email')),
@@ -148,7 +151,34 @@ class CertificateRequestController extends Controller
                 'notes' => $this->clean($request->input('notes')),
                 'attachment_path' => $attachmentPath,
                 'attachment_original_name' => $attachmentName,
-            ]);
+        ];
+
+        // Some existing installations have the original public-request schema.
+        // Only write these fields when that schema is present, so new installs
+        // retain the current, richer request structure without extra columns.
+        $columns = array_flip(Schema::getColumnListing('certificate_requests'));
+        $legacy = [
+            'requestor_name' => $payload['requester_name'],
+            'requestor_email' => $payload['requester_email'] ?? '',
+            'requestor_phone' => $payload['requester_phone'],
+            'relationship' => $payload['relationship_to_person'] ?? 'Self',
+            'subject_name' => trim(implode(' ', array_filter([
+                $payload['person_first_name'],
+                $payload['person_middle_name'],
+                $payload['person_last_name'],
+            ]))),
+            'subject_approx_date' => $payload['event_date'] ?? $payload['person_date_of_birth'],
+            'supporting_doc_path' => $attachmentPath,
+        ];
+
+        foreach ($legacy as $column => $value) {
+            if (isset($columns[$column])) {
+                $payload[$column] = $value;
+            }
+        }
+
+        $certificateRequest = DB::transaction(function () use ($payload) {
+            $row = CertificateRequest::create($payload);
             $row->statusLogs()->create(['status' => 'submitted', 'note' => 'Request submitted through the public portal.']);
             return $row;
         });
@@ -162,8 +192,11 @@ class CertificateRequestController extends Controller
 
     public function track(Request $request)
     {
-        $code = strtoupper((string) $request->query('tracking_code', $request->query('code', '')));
-        $row = CertificateRequest::with('statusLogs')->where('tracking_code', trim($code))->first();
+        $code = preg_replace('/[^A-Z0-9-]/', '', strtoupper((string) $request->query('tracking_code', $request->query('code', ''))));
+        $row = CertificateRequest::with('statusLogs')
+            ->where('tracking_code', $code)
+            ->orWhere('reference_code', $code)
+            ->first();
 
         if (! $row) {
             return response()->json(['error' => 'Request not found. Check the tracking code and try again.'], 404);

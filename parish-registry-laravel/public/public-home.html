@@ -11,7 +11,7 @@
         tailwind.config={theme:{extend:{fontFamily:{sans:['Libre Franklin','sans-serif'],serif:['Source Serif 4','serif']},colors:{ink:'#151b2b',forest:{950:'#10221c',900:'#163328',800:'#214637',700:'#2f604b'},slate2:{700:'#3f4a60',500:'#64738c',300:'#c3cbd9',100:'#eceff4'},paper:'#f7f5f0',gold:{700:'#8a6a24',600:'#a9812f',400:'#c9a04f',100:'#f3e8d0'},wine:{700:'#5e1f29',600:'#7a2734',100:'#f3e0e3'}}}}}
     </script>
     <style>
-        body{font-family:'Libre Franklin',sans-serif;background:#f7f5f0;color:#151b2b}.font-cert{font-family:'Source Serif 4',serif}.hero{min-height:calc(100vh - 72px);background:linear-gradient(90deg,rgba(16,34,28,.95) 0%,rgba(16,34,28,.78) 37%,rgba(16,34,28,.28) 72%,rgba(16,34,28,.12) 100%),url('assets/certificate-request-hero.png') center/cover no-repeat}.nav-link{color:#eceff4}.nav-link:hover{color:#c9a04f}.section-label{font-size:11px;letter-spacing:.12em;font-weight:800;color:#8a6a24;text-transform:uppercase}
+        body{font-family:'Libre Franklin',sans-serif;background:#f7f5f0;color:#151b2b}.font-cert{font-family:'Source Serif 4',serif}.hero{min-height:calc(100vh - 72px);background:linear-gradient(90deg,rgba(16,34,28,.95) 0%,rgba(16,34,28,.78) 37%,rgba(16,34,28,.28) 72%,rgba(16,34,28,.12) 100%),url('assets/certificate-request-hero.png') center/cover no-repeat}.nav-link{color:#eceff4}.nav-link:hover{color:#c9a04f}.section-label{font-size:11px;letter-spacing:.12em;font-weight:800;color:#8a6a24;text-transform:uppercase}.field-label{font-size:11px;letter-spacing:.02em;color:#64738c;font-weight:700}input,select,textarea{outline:none}input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px #c9a04f55;border-color:#a9812f}.portal-tab.active{background:#163328;color:#fff}.portal-tab:not(.active){background:#fff;color:#163328;border:1px solid #214637}.status-dot{width:10px;height:10px;border-radius:999px;background:#c3cbd9}.status-dot.done{background:#a9812f}.request-action{display:inline-flex;align-items:center;justify-content:center;border-radius:6px;padding:10px 20px;font-size:14px;font-weight:700}.request-action-next{background:#214637;color:#fff;border:1px solid #163328}.request-action-next:hover,.request-action-next:focus{background:#163328;color:#fff}.request-action-submit{background:#a9812f;color:#fff}.request-action-back{background:#fff;border:1px solid #c3cbd9;color:#151b2b}
     </style>
 </head>
 <body>
@@ -28,7 +28,7 @@
                 <a class="nav-link" href="#about">About</a>
                 <a class="nav-link" href="#services">Services</a>
                 <a class="nav-link" href="#contact">Contact</a>
-                <a class="bg-gold-600 text-white px-4 py-2 rounded-md" href="/certificate-request">Request Certificate</a>
+                <a class="bg-gold-600 text-white px-4 py-2 rounded-md" href="#request">Request Certificate</a>
             </nav>
         </div>
     </header>
@@ -41,8 +41,8 @@
                     <h1 class="font-cert text-5xl md:text-7xl font-semibold leading-[.95] mt-4">Diocese of Dumaguete</h1>
                     <p class="text-lg md:text-xl text-slate2-100 leading-8 mt-6 max-w-xl">Serving the Catholic faithful of Negros Oriental and Siquijor through pastoral care, parish records, and sacramental certificate services.</p>
                     <div class="flex flex-wrap gap-3 mt-8">
-                        <a href="/certificate-request" class="bg-gold-600 hover:bg-gold-700 text-white px-5 py-3 rounded-md text-sm font-bold">Request Certificate</a>
-                        <a href="/request-status" class="bg-white/10 hover:bg-white/15 border border-white/25 text-white px-5 py-3 rounded-md text-sm font-bold">Track Request</a>
+                        <a href="#request" class="bg-gold-600 hover:bg-gold-700 text-white px-5 py-3 rounded-md text-sm font-bold">Request Certificate</a>
+                        <a href="#request" data-open-tracking class="bg-white/10 hover:bg-white/15 border border-white/25 text-white px-5 py-3 rounded-md text-sm font-bold">Track Request</a>
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                 <p class="section-label">Services</p>
                 <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mt-3 mb-8">
                     <h2 class="font-cert text-4xl font-semibold max-w-2xl">Request and track sacramental certificates online.</h2>
-                    <a href="/certificate-request" class="bg-forest-800 text-white px-5 py-3 rounded-md text-sm font-bold w-fit">Begin a Request</a>
+                    <a href="#request" class="bg-forest-800 text-white px-5 py-3 rounded-md text-sm font-bold w-fit">Begin a Request</a>
                 </div>
                 <div class="grid md:grid-cols-3 gap-4">
                     <article class="border border-slate2-300 rounded-md p-5">
@@ -90,6 +90,29 @@
             </div>
         </section>
 
+        <section id="request" class="bg-paper border-y border-slate2-300/60 scroll-mt-20">
+            <div class="max-w-7xl mx-auto px-5 py-14">
+                <div class="max-w-3xl mb-8">
+                    <p class="section-label">Certificate Services</p>
+                    <h2 class="font-cert text-4xl font-semibold mt-3">Request or track a certificate.</h2>
+                    <p class="text-sm text-slate2-700 leading-6 mt-3">Submit a request for baptism, communion, confirmation, marriage, or death certificates. Your tracking code lets you check progress here at any time.</p>
+                </div>
+                <div class="w-full">
+                    <section class="bg-white border border-slate2-300/70 rounded-lg shadow-sm overflow-hidden">
+                        <div class="p-5 md:p-6 border-b border-slate2-100">
+                            <div class="flex flex-wrap gap-2 mb-5">
+                                <button id="request-tab" class="portal-tab active px-4 py-2 rounded-md text-sm font-semibold">Request Certificate</button>
+                                <button id="track-tab" class="portal-tab px-4 py-2 rounded-md text-sm font-semibold bg-paper text-slate2-700">Track Request</button>
+                            </div>
+                            <h3 class="text-2xl font-semibold">Request a sacramental certificate</h3>
+                            <p class="text-sm text-slate2-500 mt-1">Provide details that help parish staff verify the record.</p>
+                        </div>
+                        <div id="portal-content" class="p-5 md:p-6"></div>
+                    </section>
+                </div>
+            </div>
+        </section>
+
         <section id="contact" class="bg-forest-950 text-white">
             <div class="max-w-7xl mx-auto px-5 py-12 grid md:grid-cols-[1fr_auto] gap-8 items-center">
                 <div>
@@ -98,11 +121,13 @@
                     <p class="text-slate2-300 text-sm leading-6 mt-3">Dumaguete City, Negros Oriental. Office contact details can be finalized once confirmed by the parish or diocesan office.</p>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                    <a href="/request-status" class="bg-white text-forest-950 px-5 py-3 rounded-md text-sm font-bold">Track Request</a>
+                    <a href="#request" data-open-tracking class="bg-white text-forest-950 px-5 py-3 rounded-md text-sm font-bold">Track Request</a>
                     <a href="/staff" class="border border-white/25 text-white px-5 py-3 rounded-md text-sm font-bold">Staff Sign In</a>
                 </div>
             </div>
         </section>
     </main>
+    <script src="certificate-request.js"></script>
+    <script>document.querySelectorAll('[data-open-tracking]').forEach(link=>link.addEventListener('click',()=>setTimeout(()=>setTab('track'),0)));</script>
 </body>
 </html>

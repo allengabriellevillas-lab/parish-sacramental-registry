@@ -13,9 +13,11 @@ return new class extends Migration
             Schema::create('certificate_requests', function (Blueprint $table) {
                 $table->increments('id');
                 $table->string('tracking_code', 24)->unique();
+                $table->string('reference_code', 24)->nullable()->unique();
                 $table->enum('sacrament_type', ['Baptism', 'Communion', 'Confirmation', 'Marriage', 'Death'])->index();
                 $table->enum('status', ['submitted', 'under_review', 'needs_more_info', 'approved', 'ready_for_pickup', 'released', 'rejected', 'not_found'])->default('submitted')->index();
                 $table->string('requester_name', 200);
+                $table->string('requestor_name', 200)->nullable();
                 $table->string('requester_email', 150)->nullable()->index();
                 $table->string('requester_phone', 50);
                 $table->string('relationship_to_person', 100)->nullable();
@@ -54,8 +56,8 @@ return new class extends Migration
                 $table->text('note')->nullable();
                 $table->unsignedInteger('changed_by')->nullable();
                 $table->timestamp('created_at')->useCurrent();
-                $table->foreign('certificate_request_id')->references('id')->on('certificate_requests')->cascadeOnDelete();
-                $table->foreign('changed_by')->references('id')->on('staff_users')->nullOnDelete();
+                // This table may be added to an existing registry whose ID columns use
+                // a different integer size, so keep these relationship columns portable.
             });
         }
 
