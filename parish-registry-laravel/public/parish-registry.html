@@ -1,1 +1,137 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Parish Sacramental Registry System</title><script src="https://cdn.tailwindcss.com"></script><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet"><script>tailwind.config={theme:{extend:{fontFamily:{sans:['Libre Franklin','sans-serif'],serif:['Source Serif 4','serif']},colors:{ink:'#151b2b',navy:{950:'#0b1220',900:'#101a2e',800:'#16223b',700:'#1e2e4d'},slate2:{700:'#3f4a60',500:'#64738c',300:'#c3cbd9',100:'#eceff4'},paper:'#f7f5f0',gold:{700:'#8a6a24',600:'#a9812f',400:'#c9a04f',100:'#f3e8d0'},wine:{700:'#5e1f29',600:'#7a2734',100:'#f3e0e3'}}}}}</script><style>body{font-family:'Libre Franklin',sans-serif;background:#eef0f4;color:#151b2b}.font-cert{font-family:'Source Serif 4',serif}.field-label{font-size:11px;letter-spacing:.02em;color:#64738c;font-weight:600}input,select,textarea{outline:none}input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px #c9a04f55;border-color:#a9812f}.tab.active{color:#c9a04f;border-bottom:2px solid #c9a04f}.seal{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d8b866,#a9812f 55%,#7a5b1d);border:3px solid #8a6a24;display:grid;place-items:center;box-shadow:inset 0 0 0 4px #ffffff26}.seal div{font:11px/1.2 'Source Serif 4',serif;color:#3a2c0c;text-align:center}@media print{body *{visibility:hidden}#printCertificate,#printCertificate *{visibility:visible}#printCertificate{position:absolute;inset:0;width:100%;margin:0;border:0;box-shadow:none}.no-print{display:none!important}}</style></head><body class="min-h-screen"><div id="app"></div><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Parish Sacramental Registry System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Libre Franklin', 'sans-serif'],
+                        serif: ['Source Serif 4', 'serif']
+                    },
+                    colors: {
+                        ink: '#1a1f25',
+                        navy: {
+                            950: '#052c3b',
+                            900: '#06455f',
+                            800: '#008fbe',
+                            700: '#13bde8'
+                        },
+                        slate2: {
+                            700: '#33424f',
+                            500: '#667887',
+                            300: '#c7d4dc',
+                            100: '#eaf7fc'
+                        },
+                        paper: '#f2fbff',
+                        gold: {
+                            700: '#b8440b',
+                            600: '#f26a16',
+                            400: '#ff9a3d',
+                            100: '#fff0e3'
+                        },
+                        wine: {
+                            700: '#990f14',
+                            600: '#c9141b',
+                            100: '#ffe5e6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Libre Franklin', sans-serif;
+            background: #eefaff;
+            color: #1a1f25;
+        }
+
+        .font-cert {
+            font-family: 'Source Serif 4', serif;
+        }
+
+        .field-label {
+            font-size: 11px;
+            letter-spacing: .02em;
+            color: #667887;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        textarea {
+            outline: none;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            box-shadow: 0 0 0 3px #13bde844;
+            border-color: #008fbe;
+        }
+
+        .tab.active {
+            color: #008fbe;
+            border-bottom: 2px solid #008fbe;
+        }
+
+        .seal {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #ff9a3d, #f26a16 48%, #c9141b 72%);
+            border: 3px solid #052c3b;
+            display: grid;
+            place-items: center;
+            box-shadow: inset 0 0 0 4px #ffffff26;
+        }
+
+        .seal div {
+            font: 11px/1.2 'Source Serif 4', serif;
+            color: #1a1f25;
+            text-align: center;
+        }
+
+        .lucide {
+            width: 1em;
+            height: 1em;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #printCertificate,
+            #printCertificate * {
+                visibility: visible;
+            }
+
+            #printCertificate {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                margin: 0;
+                border: 0;
+                box-shadow: none;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="app"></div>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="app.js"></script>
+</body>
+</html>
