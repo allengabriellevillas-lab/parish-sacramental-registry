@@ -106,6 +106,108 @@
             text-align: center;
         }
 
+        /* Staff sign-in screen. */
+        .login-screen {
+            min-height: 100vh;
+            background: #fff;
+        }
+
+        .login-visual {
+            min-height: 43vh;
+            position: relative;
+            overflow: hidden;
+            background: #008fbe url('assets/9111fe70-fe2d-4e90-a610-68435670fdc4.jpg') center 42% / cover no-repeat;
+        }
+
+        .login-visual::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(5, 44, 59, .92), rgba(0, 143, 190, .55));
+        }
+
+        .login-visual-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-form-panel {
+            min-height: 57vh;
+        }
+
+        .login-form-panel > div {
+            max-width: 360px !important;
+        }
+
+        .login-form-panel > div > div:first-child > img,
+        .login-form-panel > div > div:first-child > span {
+            width: 52px;
+            height: 52px;
+        }
+
+        .login-form-panel > div > div:first-child > span {
+            display: none;
+        }
+
+        .login-form-panel > div > p:first-of-type,
+        .login-form-panel label {
+            font-size: 10px;
+        }
+
+        .login-form-panel form {
+            margin-top: 1.75rem !important;
+        }
+
+        .login-input {
+            height: 50px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .login-input:focus {
+            box-shadow: 0 0 0 3px rgba(19, 189, 232, .20);
+            border-color: #008fbe;
+        }
+
+        .login-submit {
+            background: #008fbe;
+            box-shadow: 0 2px 5px rgba(5, 44, 59, .22);
+        }
+
+        .login-submit:hover,
+        .login-submit:focus {
+            background: #06455f;
+        }
+
+        .login-submit {
+            font-size: 11px !important;
+            padding-top: 14px !important;
+            padding-bottom: 14px !important;
+        }
+
+        .login-form-panel > div > p:last-child {
+            font-size: 9px;
+        }
+
+        /* Let the staff dashboard occupy all space beside the fixed sidebar. */
+        #content {
+            width: 100%;
+            max-width: none !important;
+        }
+
+        @media (min-width: 768px) {
+            .login-screen {
+                display: grid;
+                grid-template-columns: minmax(0, 2.2fr) minmax(360px, 1fr);
+            }
+
+            .login-visual,
+            .login-form-panel {
+                min-height: 100vh;
+            }
+        }
+
         .lucide {
             width: 1em;
             height: 1em;
