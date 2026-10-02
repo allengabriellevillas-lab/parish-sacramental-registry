@@ -42,11 +42,29 @@ class IssuanceController extends Controller
             '{page}' => e($record->page_number),
             '{line}' => e($record->line_number),
         ]);
-        $dataUri = fn ($path) => $path && Storage::disk('public')->exists($path)
-            ? 'data:' . Storage::disk('public')->mimeType($path) . ';base64,' . base64_encode(Storage::disk('public')->get($path))
-            : null;
+        $dataUri = static function ($path): ?string {
+            if (! $path) return null;
 
-        return Pdf::loadView('certificates.certificate', [
+            $disk = Storage::disk('public');
+            if ($disk->exists($path)) {
+                $mime = $disk->mimeType($path);
+                $contents = $disk->get($path);
+            } elseif (preg_match('#^uploads/[A-Za-z0-9_.-]+$#', $path) && is_file(base_path('../' . $path))) {
+                $legacyPath = base_path('../' . $path);
+                $mime = mime_content_type($legacyPath);
+                $contents = file_get_contents($legacyPath);
+            } else {
+                return null;
+            }
+
+            if (! in_array($mime, ['image/png', 'image/jpeg'], true) || $contents === false) return null;
+
+            return 'data:' . $mime . ';base64,' . base64_encode($contents);
+        };
+        // The certificate seal must come from the seal field in Parish Settings.
+        $sealDataUri = $dataUri($parish->seal_image_path);
+
+        $response = Pdf::loadView('certificates.certificate', [
             'parish' => $parish,
             'record' => $record,
             'title' => $template->title_text,
@@ -56,9 +74,18 @@ class IssuanceController extends Controller
             'today' => now()->format('F j, Y'),
             'issuedTo' => $log->requestor_name === 'Not specified' ? '____________________' : $log->requestor_name,
             'purpose' => $log->purpose,
-            'sealDataUri' => $dataUri($parish->seal_image_path),
+            'logoDataUri' => $dataUri($parish->logo_image_path),
+            'sealDataUri' => $sealDataUri,
             'signatureDataUri' => $dataUri($parish->priest_signature_path),
-        ])->setPaper('letter', 'portrait')->stream('certificate-' . $record->id . '.pdf');
+        ])->setPaper('A4', 'portrait')->stream('certificate-' . $record->id . '.pdf');
+
+        // A certificate URL can be reopened with the same issuance log after
+        // branding changes. Do not let the browser reuse the previous PDF.
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
     }
 
     public function index(Request $request)

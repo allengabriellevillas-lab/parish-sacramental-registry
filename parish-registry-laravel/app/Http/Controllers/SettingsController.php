@@ -53,12 +53,13 @@ class SettingsController extends Controller
     }
 
     public function uploadSeal(Request $request) { return $this->upload($request, 'seal', 'seal_image_path'); }
+    public function uploadLogo(Request $request) { return $this->upload($request, 'logo', 'logo_image_path'); }
     public function uploadSignature(Request $request) { return $this->upload($request, 'signature', 'priest_signature_path'); }
 
     public function image(Request $request, string $type)
     {
-        if (!in_array($type, ['seal', 'signature'], true)) abort(404);
-        $column = $type === 'seal' ? 'seal_image_path' : 'priest_signature_path';
+        if (!in_array($type, ['logo', 'seal', 'signature'], true)) abort(404);
+        $column = ['logo' => 'logo_image_path', 'seal' => 'seal_image_path', 'signature' => 'priest_signature_path'][$type];
         $path = self::parish()->{$column};
         if (!$path || !Storage::disk('public')->exists($path)) return response()->json(['error' => 'Image not found'], 404);
         return response(Storage::disk('public')->get($path), 200, ['Content-Type' => Storage::disk('public')->mimeType($path)]);

@@ -194,15 +194,15 @@ if ($path === '/me/avatar' && $method === 'GET') {
     exit;
 }
 if ($path === '/settings' && $method === 'GET') {
-    allow(['admin']);
+    allow(['staff']);
     json(['data' => settings()]);
 }
 if ($path === '/certificate-preview-settings' && $method === 'GET') {
-    allow(['admin', 'staff']);
+    allow(['staff']);
     json(['data' => settings()]);
 }
 if (preg_match('#^/certificate-preview-image/(seal|signature)$#', $path, $m) && $method === 'GET') {
-    allow(['admin', 'staff']);
+    allow(['staff']);
     $column = $m[1] === 'seal' ? 'seal_image_path' : 'priest_signature_path';
     $imagePath = settings()['parish'][$column] ?? null;
     if (!$imagePath || !preg_match('#^uploads/[A-Za-z0-9_.-]+$#', $imagePath))
@@ -219,7 +219,7 @@ if (preg_match('#^/certificate-preview-image/(seal|signature)$#', $path, $m) && 
     exit;
 }
 if (preg_match('#^/settings/image/(seal|signature)$#', $path, $m) && $method === 'GET') {
-    allow(['admin']);
+    allow(['staff']);
     $column = $m[1] === 'seal' ? 'seal_image_path' : 'priest_signature_path';
     $path = settings()['parish'][$column] ?? null;
     if (!$path || !preg_match('#^uploads/[A-Za-z0-9_.-]+$#', $path))
@@ -236,13 +236,13 @@ if (preg_match('#^/settings/image/(seal|signature)$#', $path, $m) && $method ===
     exit;
 }
 if ($path === '/settings' && $method === 'PUT') {
-    allow(['admin']);
+    allow(['staff']);
     $d = input();
     db()->prepare('UPDATE parish_settings SET parish_name=?,diocese_name=?,address=?,default_priest_name=? WHERE id=1')->execute([clean($d['parish_name'] ?? ''), clean($d['diocese_name'] ?? ''), clean($d['address'] ?? ''), clean($d['default_priest_name'] ?? '')]);
     json(['data' => settings()]);
 }
 if ($path === '/settings/seal' && $method === 'POST') {
-    allow(['admin']);
+    allow(['staff']);
     $p = save_upload('seal', 'seal');
     if (!$p)
         json(['error' => 'Select a seal image'], 422);
@@ -250,7 +250,7 @@ if ($path === '/settings/seal' && $method === 'POST') {
     json(['data' => settings()]);
 }
 if ($path === '/settings/priest-signature' && $method === 'POST') {
-    allow(['admin']);
+    allow(['staff']);
     $p = save_upload('signature', 'signature');
     if (!$p)
         json(['error' => 'Select a signature image'], 422);
@@ -258,13 +258,13 @@ if ($path === '/settings/priest-signature' && $method === 'POST') {
     json(['data' => settings()]);
 }
 if (preg_match('#^/certificate-templates/(Baptism|Communion|Confirmation|Marriage|Death)$#', $path, $m) && $method === 'PUT') {
-    allow(['admin']);
+    allow(['staff']);
     $d = input();
     db()->prepare('UPDATE certificate_templates SET title_text=?,body_template=?,footer_note=? WHERE sacrament_type=?')->execute([clean($d['title_text'] ?? ''), (string) ($d['body_template'] ?? ''), clean($d['footer_note'] ?? ''), $m[1]]);
     json(['data' => settings()['templates'][$m[1]]]);
 }
 if ($path === '/records' && $method === 'GET') {
-    allow(['admin', 'staff', 'viewer']);
+    allow(['staff']);
     $q = '%' . clean($_GET['q'] ?? '') . '%';
     $where = ' WHERE (p.first_name LIKE ? OR p.middle_name LIKE ? OR p.last_name LIKE ? OR p.date_of_birth LIKE ? OR r.sacrament_type LIKE ? OR r.book_number LIKE ? OR r.page_number LIKE ? OR r.line_number LIKE ?)';
     $args = array_fill(0, 8, $q);
@@ -282,12 +282,12 @@ if ($path === '/records' && $method === 'GET') {
     json(['data' => $s->fetchAll(), 'meta' => ['total' => (int) $count->fetchColumn(), 'page' => $page, 'per_page' => $per]]);
 }
 if (preg_match('#^/records/(\\d+)$#', $path, $m) && $method === 'GET') {
-    allow(['admin', 'staff', 'viewer']);
+    allow(['staff']);
     $r = record((int) $m[1]);
     $r ? json(['data' => $r]) : json(['error' => 'Not found'], 404);
 }
 if ($path === '/records' && $method === 'POST') {
-    $u = allow(['admin', 'staff']);
+    $u = allow(['staff']);
     list($f, $errors) = validate(input());
     if ($errors)
         json(['error' => 'Validation failed', 'errors' => $errors], 422);
@@ -313,7 +313,7 @@ if ($path === '/records' && $method === 'POST') {
     }
 }
 if (preg_match('#^/records/(\\d+)/issue$#', $path, $m) && $method === 'POST') {
-    $u = allow(['admin', 'staff']);
+    $u = allow(['staff']);
     $r = record((int) $m[1]);
     if (!$r)
         json(['error' => 'Not found'], 404);
@@ -327,7 +327,7 @@ if (preg_match('#^/records/(\\d+)/issue$#', $path, $m) && $method === 'POST') {
     json(['data' => ['id' => (int) db()->lastInsertId(), 'sacramental_record_id' => $r['id'], 'requestor_name' => $name, 'purpose' => $purpose]], 201);
 }
 if (preg_match('#^/records/(\d+)/certificate\.pdf$#', $path, $m) && $method === 'GET') {
-    allow(['admin', 'staff']);
+    allow(['staff']);
     $r = record((int) $m[1]);
     $log = (int) ($_GET['log_id'] ?? 0);
     $s = db()->prepare('SELECT requestor_name, purpose FROM certificate_issuance_logs WHERE id=? AND sacramental_record_id=?');
@@ -342,16 +342,19 @@ if (preg_match('#^/records/(\d+)/certificate\.pdf$#', $path, $m) && $method === 
     $options->set('isRemoteEnabled', false);
     $dompdf = new \Dompdf\Dompdf($options);
     $dompdf->loadHtml($html);
-    $dompdf->setPaper('letter', 'portrait');
+    $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
 
     header('Content-Type: application/pdf');
     header('Content-Disposition: inline; filename="certificate-' . $r['id'] . '.pdf"');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
     echo $dompdf->output();
     exit;
 }
 if ($path === '/imports' && $method === 'POST') {
-    $u = allow(['admin', 'staff']);
+    $u = allow(['staff']);
     if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK || $_FILES['file']['size'] > 5 * 1024 * 1024 || !preg_match('/\.csv$/i', $_FILES['file']['name']))
         json(['error' => 'Upload a CSV no larger than 5MB'], 422);
     $h = fopen($_FILES['file']['tmp_name'], 'r');
@@ -374,7 +377,7 @@ if ($path === '/imports' && $method === 'POST') {
     json(['data' => ['batch_id' => $id, 'rows' => $rows], 'meta' => ['total' => count($rows), 'valid' => $valid]], 201);
 }
 if (preg_match('#^/imports/(\\d+)/commit$#', $path, $m) && $method === 'POST') {
-    $u = allow(['admin', 'staff']);
+    $u = allow(['staff']);
     $d = db();
     $b = $d->prepare("SELECT * FROM import_batches WHERE id=? AND status='staged'");
     $b->execute([(int) $m[1]]);
@@ -411,19 +414,19 @@ if (preg_match('#^/imports/(\\d+)/commit$#', $path, $m) && $method === 'POST') {
     }
 }
 if (($path === '/imports/template' || preg_match('#^/imports/(\\d+)/template$#', $path)) && $method === 'GET') {
-    allow(['admin', 'staff']);
+    allow(['staff']);
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="parish_bulk_import_template.csv"');
     readfile(__DIR__ . '/../parish_bulk_import_template.csv');
     exit;
 }
 if (preg_match('#^/imports/(\\d+)$#', $path, $m) && $method === 'DELETE') {
-    allow(['admin', 'staff']);
+    allow(['staff']);
     db()->prepare("UPDATE import_batches SET status='discarded' WHERE id=? AND status='staged'")->execute([(int) $m[1]]);
     json(['data' => true]);
 }
 if ($path === '/issuance-logs' && $method === 'GET') {
-    allow(['admin', 'staff', 'viewer']);
+    allow(['staff']);
     $page = max(1, (int) ($_GET['page'] ?? 1));
     $per = min(100, max(1, (int) ($_GET['per_page'] ?? 25)));
     $where = '';
@@ -472,30 +475,31 @@ function certificate_html(array $r, string $requestor, string $purpose): string
     $imageData = static function (?string $path): string {
         if (!$path || !preg_match('#^uploads/[A-Za-z0-9_.-]+$#', $path))
             return '';
-        $file = dirname(__DIR__) . '/' . $path;
-        if (!is_file($file))
-            return '';
-        $mime = mime_content_type($file);
-        if (!in_array($mime, ['image/png', 'image/jpeg'], true))
-            return '';
-        return 'data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($file));
+        // Settings uploads may come from either the standalone PHP settings page
+        // or the Laravel settings page. Both store the same relative path in the
+        // shared parish_settings row, but Laravel keeps the file on its public disk.
+        $files = [
+            dirname(__DIR__) . '/' . $path,
+            dirname(__DIR__) . '/parish-registry-laravel/storage/app/public/' . $path,
+        ];
+        foreach ($files as $file) {
+            if (!is_file($file))
+                continue;
+            $mime = mime_content_type($file);
+            if (!in_array($mime, ['image/png', 'image/jpeg'], true))
+                continue;
+            $contents = file_get_contents($file);
+            if ($contents !== false)
+                return 'data:' . $mime . ';base64,' . base64_encode($contents);
+        }
+        return '';
     };
 
     $sealData = $imageData($parish['seal_image_path'] ?? null);
     $signatureData = $imageData($parish['priest_signature_path'] ?? null);
-    $defaultSealSvg = <<<'SVG'
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 153 141" role="img" aria-label="Parish seal">
-  <circle cx="76.5" cy="70.5" r="48" fill="#8a6a24"/>
-  <circle cx="76.5" cy="70.5" r="44" fill="#b48936" stroke="#d2ad61" stroke-width="2"/>
-  <circle cx="76.5" cy="70.5" r="38" fill="#a9812f" stroke="#947027" stroke-width="2"/>
-  <text x="76.5" y="65" text-anchor="middle" fill="#3a2c0c" font-family="Times New Roman, serif" font-size="12">PARISH</text>
-  <text x="76.5" y="78" text-anchor="middle" fill="#3a2c0c" font-family="Times New Roman, serif" font-size="12">SEAL</text>
-</svg>
-SVG;
-
     $seal = $sealData
-        ? "<img src='{$sealData}' style='width:110px;height:110px;border-radius:50%;object-fit:cover;' alt='Parish seal' />"
-        : "<img src='data:image/svg+xml;base64," . base64_encode($defaultSealSvg) . "' style='width:110px;height:110px;' alt='Parish seal' />";
+        ? "<div style='text-align:center;margin:0 auto 34px;'><img src='{$sealData}' style='display:inline-block;width:auto;height:auto;max-width:110px;max-height:110px;' alt='Parish seal' /></div>"
+        : '';
     $signature = $signatureData
         ? "<img src='{$signatureData}' style='height:44px;margin-bottom:6px;' alt='Priest signature' />"
         : '';
@@ -514,8 +518,8 @@ SVG;
 
     return <<<HTML
     <html><head><style>
-      /* Letter size, 1in top/bottom margin so content is framed instead of crammed at the top */
-      @page { size: letter; margin: 1in 0.85in; }
+      /* A4 page with 1in top/bottom margin so content is framed instead of crammed at the top */
+      @page { size: A4; margin: 1in 0.85in; }
       body { font-family: 'Times New Roman', serif; margin:0; }
     </style></head><body>
       <p style="text-align:center;font-size:12px;letter-spacing:1.5px;color:#7a2734;margin:0;">{$esc($parish['diocese_name'] ?? '')}</p>
@@ -523,7 +527,7 @@ SVG;
       <p style="text-align:center;font-size:12px;color:#4a4a4a;margin:0 0 26px;">{$esc($parish['address'] ?? '')}</p>
       <div style="border-top:2px solid #a9812f;margin-bottom:34px;"></div>
 
-      <div style="text-align:center;margin-bottom:34px;">{$seal}</div>
+      {$seal}
 
       <p style="text-align:center;font-size:23px;font-weight:bold;letter-spacing:.75px;color:#101010;margin:0 0 34px;">{$esc($title)}</p>
 
@@ -583,7 +587,7 @@ function certificate_html_legacy(array $r, string $requestor, string $purpose): 
     $body = $esc(strtr((string) ($template['body_template'] ?? ''), $tokens));
     $title = (string) ($template['title_text'] ?? $title);
     $footerNote = $esc((string) ($template['footer_note'] ?? 'Not valid without the parish dry seal.'));
-    $seal = $sealData ? '<img class="seal-image" src="' . $sealData . '" alt="Parish seal" />' : '<div class="seal"><table><tr><td>PARISH<br/>SEAL</td></tr></table></div>';
+    $seal = $sealData ? '<img class="seal-image" src="' . $sealData . '" alt="Parish seal" />' : '';
     $signature = $signatureData ? '<img class="signature" src="' . $signatureData . '" alt="Priest signature" />' : '<div class="signature-space"></div>';
 
     $marginNotes = !empty($r['marginNotes']) ? "
@@ -605,7 +609,7 @@ function certificate_html_legacy(array $r, string $requestor, string $purpose): 
                 margin:0 auto 22px; color:#3a2c0c; font-size:11px; font-weight:bold; }
         .seal table { width:84px; height:84px; border-collapse:collapse; }
         .seal td { text-align:center; vertical-align:middle; line-height:12px; }
-        .seal-image { display:block; width:96px; height:96px; margin:0 auto 18px; object-fit:contain; }
+        .seal-image { display:block; width:auto; height:auto; max-width:96px; max-height:96px; margin:0 auto 18px; }
         .title { text-align:center; font-size:22px; font-weight:bold; letter-spacing:.5px; margin-bottom:24px; }
         .body { font-size:16px; line-height:1.9; text-align:justify; margin-bottom:26px; }
         .refstrip { border-top:1px solid #d8d2c2; border-bottom:1px solid #d8d2c2; padding:12px 0; margin-bottom:24px; width:100%; }

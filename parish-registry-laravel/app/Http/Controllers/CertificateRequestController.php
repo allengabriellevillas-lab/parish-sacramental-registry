@@ -352,7 +352,7 @@ class CertificateRequestController extends Controller
             'request' => $certificateRequest,
             'statusLabel' => ucwords(str_replace('_', ' ', $certificateRequest->status)),
             'today' => now()->format('F j, Y'),
-        ])->setPaper('letter', 'portrait')->stream('request-' . $certificateRequest->tracking_code . '-claim-slip.pdf');
+        ])->setPaper('A4', 'portrait')->stream('request-' . $certificateRequest->tracking_code . '-claim-slip.pdf');
     }
 
     public function issue(Request $request, CertificateRequest $certificateRequest)

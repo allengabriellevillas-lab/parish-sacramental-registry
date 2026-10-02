@@ -1,7 +1,7 @@
 <html>
 <head>
     <style>
-        @page { size: letter; margin: .6in; }
+        @page { size: A4; margin: .6in; }
         body { font-family: DejaVu Sans, sans-serif; color: #151b2b; font-size: 12px; margin: 0; }
         h1 { font-size: 22px; margin: 0 0 4px; }
         h2 { font-size: 13px; margin: 22px 0 8px; text-transform: uppercase; letter-spacing: .8px; color: #5e1f29; }

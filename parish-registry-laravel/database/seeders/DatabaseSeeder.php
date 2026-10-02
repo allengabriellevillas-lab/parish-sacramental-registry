@@ -12,12 +12,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate([
-            'username' => 'admin',
+            'username' => 'staff',
         ], [
-            'full_name' => 'System Administrator',
-            'email' => 'admin@example.com',
+            'full_name' => 'Parish Staff',
+            'email' => 'staff@example.com',
             'password_hash' => Hash::make('password'),
-            'role' => 'admin',
+            'role' => 'staff',
             'is_active' => true,
         ]);
 
