@@ -10,6 +10,7 @@ class CertificateTemplateController extends Controller
 
     public function update(Request $request, string $sacrament)
     {
+        abort_unless($request->user()->can_manage_parishes, 403);
         if (!in_array($sacrament, self::SACRAMENTS, true)) abort(404);
 
         $values = $request->validate(['title_text' => ['required', 'string', 'max:150'], 'body_template' => ['required', 'string'], 'footer_note' => ['required', 'string', 'max:255']]);

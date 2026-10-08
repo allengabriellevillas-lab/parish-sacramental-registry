@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{CertificateIssuanceLog, CertificateRequest, SacramentalRecord};
+use App\Models\{CertificateIssuanceLog, CertificateRequest, Parish, SacramentalRecord};
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +32,15 @@ class CertificateRequestController extends Controller
         return $code;
     }
 
+    private function ensureParishAccess(Request $request, CertificateRequest $certificateRequest): void
+    {
+        abort_unless(
+            $certificateRequest->record_parish_id === null
+                || (int) $certificateRequest->record_parish_id === (int) $request->user()->parish_id,
+            404
+        );
+    }
+
     private function shape(CertificateRequest $request, bool $details = false): array
     {
         $record = $request->record;
@@ -41,6 +50,9 @@ class CertificateRequestController extends Controller
             'tracking_code' => $request->tracking_code,
             'status' => $request->status,
             'sacrament_type' => $request->sacrament_type,
+            'record_parish_id' => $request->record_parish_id,
+            'record_parish_name' => $request->recordParish?->name,
+            'record_parish_not_listed' => (bool) $request->record_parish_not_listed,
             'requester_name' => $request->requester_name,
             'requester_email' => $request->requester_email,
             'requester_phone' => $request->requester_phone,
@@ -92,6 +104,15 @@ class CertificateRequestController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'sacrament_type' => 'required|in:' . implode(',', $this->sacraments),
+            'record_parish' => ['required', function ($attribute, $value, $fail) {
+                if ((string) $value === 'not_listed') {
+                    return;
+                }
+
+                if (! is_numeric($value) || ! Parish::where('id', (int) $value)->where('is_active', true)->exists()) {
+                    $fail('Please choose a parish from the list or select “Not sure / parish not listed.”');
+                }
+            }],
             'requester_name' => 'required|string|max:200',
             'requester_email' => 'nullable|email|max:150',
             'requester_phone' => 'required|string|max:50',
@@ -132,6 +153,8 @@ class CertificateRequestController extends Controller
                 // public identifier. Keep it in sync with the tracking code.
                 'reference_code' => $tracking,
                 'sacrament_type' => $this->clean($request->input('sacrament_type')),
+                'record_parish_id' => $request->input('record_parish') === 'not_listed' ? null : (int) $request->input('record_parish'),
+                'record_parish_not_listed' => $request->input('record_parish') === 'not_listed',
                 'requester_name' => $this->clean($request->input('requester_name')),
                 'requester_email' => $this->clean($request->input('requester_email')),
                 'requester_phone' => $this->clean($request->input('requester_phone')),
@@ -221,8 +244,14 @@ class CertificateRequestController extends Controller
     {
         $status = $request->query('status', 'all');
         $q = trim((string) $request->query('q', ''));
-        $counts = CertificateRequest::select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status');
-        $rows = CertificateRequest::with(['record.person'])
+        $parishRequests = fn ($query) => $query->where(function ($scope) use ($request) {
+            $scope->where('record_parish_id', $request->user()->parish_id)
+                ->orWhereNull('record_parish_id');
+        });
+        $counts = CertificateRequest::where($parishRequests)
+            ->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status');
+        $rows = CertificateRequest::with(['record.person', 'recordParish'])
+            ->where($parishRequests)
             ->when(in_array($status, $this->statuses, true), fn ($x) => $x->where('status', $status))
             ->when($status === 'open', fn ($x) => $x->whereIn('status', ['submitted', 'under_review', 'needs_more_info', 'approved']))
             ->when($q !== '', fn ($x) => $x->where(function ($w) use ($q) {
@@ -246,23 +275,30 @@ class CertificateRequestController extends Controller
         ]]);
     }
 
-    public function show(CertificateRequest $certificateRequest)
+    public function show(Request $request, CertificateRequest $certificateRequest)
     {
-        $certificateRequest->load(['record.person', 'statusLogs.changedBy']);
+        $this->ensureParishAccess($request, $certificateRequest);
+        $certificateRequest->load(['record.person', 'recordParish', 'statusLogs.changedBy']);
         return response()->json(['data' => $this->shape($certificateRequest, true)]);
     }
 
     public function update(Request $request, CertificateRequest $certificateRequest)
     {
+        $this->ensureParishAccess($request, $certificateRequest);
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:' . implode(',', $this->statuses),
-            'sacramental_record_id' => 'nullable|integer|exists:sacramental_records,id',
+            'sacramental_record_id' => 'nullable|integer',
             'public_note' => 'nullable|string|max:4000',
             'staff_notes' => 'nullable|string|max:4000',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => 'Please check the request update.', 'errors' => $validator->errors()->all()], 422);
+        }
+
+        $recordId = $request->input('sacramental_record_id');
+        if ($recordId && ! SacramentalRecord::where('id', $recordId)->where('parish_id', $request->user()->parish_id)->exists()) {
+            return response()->json(['error' => 'Choose a record from your parish.'], 422);
         }
 
         $oldStatus = $certificateRequest->status;
@@ -282,12 +318,13 @@ class CertificateRequestController extends Controller
             ]);
         }
 
-        $certificateRequest->load(['record.person', 'statusLogs.changedBy']);
+        $certificateRequest->load(['record.person', 'recordParish', 'statusLogs.changedBy']);
         return response()->json(['data' => $this->shape($certificateRequest, true)]);
     }
 
-    public function attachment(CertificateRequest $certificateRequest)
+    public function attachment(Request $request, CertificateRequest $certificateRequest)
     {
+        $this->ensureParishAccess($request, $certificateRequest);
         if (! $certificateRequest->attachment_path || ! Storage::disk('local')->exists($certificateRequest->attachment_path)) {
             return response()->json(['error' => 'Attachment not found'], 404);
         }
@@ -299,14 +336,16 @@ class CertificateRequestController extends Controller
         ]);
     }
 
-    public function matches(CertificateRequest $certificateRequest)
+    public function matches(Request $request, CertificateRequest $certificateRequest)
     {
+        $this->ensureParishAccess($request, $certificateRequest);
         $lastName = $certificateRequest->person_last_name;
         $firstName = $certificateRequest->person_first_name;
         $dob = $certificateRequest->person_date_of_birth?->format('Y-m-d');
         $eventYear = $certificateRequest->event_date?->format('Y') ?: $certificateRequest->event_year;
 
         $rows = SacramentalRecord::with('person')
+            ->where('parish_id', $request->user()->parish_id)
             ->where('sacrament_type', $certificateRequest->sacrament_type)
             ->whereHas('person', function ($q) use ($lastName, $firstName, $dob) {
                 $q->where('last_name', 'like', "%$lastName%")
@@ -344,8 +383,9 @@ class CertificateRequestController extends Controller
         return response()->json(['data' => $rows]);
     }
 
-    public function claimSlip(CertificateRequest $certificateRequest)
+    public function claimSlip(Request $request, CertificateRequest $certificateRequest)
     {
+        $this->ensureParishAccess($request, $certificateRequest);
         $certificateRequest->load('record.person');
 
         return Pdf::loadView('certificate_requests.claim-slip', [
@@ -357,11 +397,13 @@ class CertificateRequestController extends Controller
 
     public function issue(Request $request, CertificateRequest $certificateRequest)
     {
+        $this->ensureParishAccess($request, $certificateRequest);
         if (! $certificateRequest->sacramental_record_id) {
             return response()->json(['error' => 'Link a matching sacramental record before issuing a certificate.'], 422);
         }
 
         $record = SacramentalRecord::findOrFail($certificateRequest->sacramental_record_id);
+        abort_unless($record->parish_id === $request->user()->parish_id, 404);
         $log = DB::transaction(function () use ($request, $certificateRequest, $record) {
             $log = CertificateIssuanceLog::create([
                 'sacramental_record_id' => $record->id,

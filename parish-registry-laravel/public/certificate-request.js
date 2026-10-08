@@ -10,11 +10,19 @@ function field(label,name,type='text',extra=''){
     return `<div><label class="field-label block mb-1">${label}</label><input name="${name}" type="${type}" class="w-full border border-slate2-300 rounded-md p-2.5 text-sm" ${extra}></div>`;
 }
 
-function select(label,name,options){
-    return `<div><label class="field-label block mb-1">${label}</label><select name="${name}" class="w-full border border-slate2-300 rounded-md p-2.5 text-sm">${options.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}</select></div>`;
+function select(label,name,options,required=false){
+    return `<div><label class="field-label block mb-1">${label}</label><select name="${name}" ${required?'required':''} class="w-full border border-slate2-300 rounded-md p-2.5 text-sm">${options.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}</select></div>`;
 }
 
-function requestForm(){
+async function requestForm(){
+    let parishOptions;
+    try{
+        const result=await apiCall('/parishes');
+        parishOptions=[['','Choose a parish'],...(result.data||[]).map(p=>[p.id,p.name]),['not_listed','Not sure / parish not listed']];
+    }catch(err){
+        $('#portal-content').innerHTML=`<div class="rounded-md border border-wine-600/30 bg-wine-100 p-4 text-sm text-wine-700">We couldn’t load the parish list. Please refresh the page and try again.</div>`;
+        return;
+    }
     $('#portal-content').innerHTML=`<form id="request-form" class="space-y-6">
         <ol class="grid grid-cols-3 gap-2 text-center text-xs font-semibold" aria-label="Request progress">
             ${['Requester details','Certificate details','Supporting information'].map((label,index)=>`<li data-step-indicator="${index+1}" class="rounded-md px-2 py-2 ${index===0?'bg-gold-100 text-gold-700':'bg-paper text-slate2-500'}"><span class="block text-[10px] uppercase tracking-wide">Step ${index+1}</span>${label}</li>`).join('')}
@@ -33,6 +41,7 @@ function requestForm(){
         <section data-request-step="2" class="hidden">
             <h2 class="font-semibold mb-1">Certificate Details</h2><p class="text-sm text-slate2-500 mb-4">Enter the information parish staff can use to find the record.</p>
             <div class="grid md:grid-cols-2 gap-4">
+                ${select('PARISH WHERE THE SACRAMENT TOOK PLACE','record_parish',parishOptions,true)}
                 ${select('CERTIFICATE TYPE','sacrament_type',[['Baptism','Baptism'],['Communion','First Communion'],['Confirmation','Confirmation'],['Marriage','Marriage'],['Death','Death']])}
                 ${select('GENDER','person_gender',[['Unknown','Unknown'],['Female','Female'],['Male','Male']])}
                 ${field('FIRST NAME','person_first_name','text','required maxlength="100"')}

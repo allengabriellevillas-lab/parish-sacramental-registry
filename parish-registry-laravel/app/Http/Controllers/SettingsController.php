@@ -38,6 +38,7 @@ class SettingsController extends Controller
 
     public function update(Request $request)
     {
+        abort_unless($request->user()->can_manage_parishes, 403);
         $values = $request->validate(['parish_name' => ['required', 'string', 'max:200'], 'diocese_name' => ['required', 'string', 'max:200'], 'address' => ['nullable', 'string', 'max:255'], 'default_priest_name' => ['nullable', 'string', 'max:200']]);
         $values['address'] = $values['address'] ?? '';
         $values['default_priest_name'] = $values['default_priest_name'] ?? '';
@@ -47,6 +48,7 @@ class SettingsController extends Controller
 
     private function upload(Request $request, string $field, string $column)
     {
+        abort_unless($request->user()->can_manage_parishes, 403);
         $request->validate([$field => ['required', 'image', 'mimes:png,jpg,jpeg', 'max:2048']]);
         self::parish()->update([$column => $request->file($field)->store('uploads', 'public')]);
         return response()->json(['data' => $this->data()]);

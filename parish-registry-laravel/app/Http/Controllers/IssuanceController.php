@@ -11,6 +11,7 @@ class IssuanceController extends Controller
 {
     public function store(Request $request, SacramentalRecord $record)
     {
+        abort_unless((int) $record->parish_id === (int) $request->user()->parish_id, 404);
         $name = trim(strip_tags((string) $request->input('requestor_name')));
         $purpose = trim(strip_tags((string) $request->input('purpose')));
         if (!$name || !$purpose) return response()->json(['error' => 'Requestor name and purpose are required'], 422);
@@ -21,6 +22,7 @@ class IssuanceController extends Controller
 
     public function certificate(Request $request, SacramentalRecord $record)
     {
+        abort_unless((int) $record->parish_id === (int) $request->user()->parish_id, 404);
         $log = CertificateIssuanceLog::whereKey($request->query('log_id'))->where('sacramental_record_id', $record->id)->first();
         if (!$log) return response()->json(['error' => 'Issuance log required'], 404);
 
@@ -90,7 +92,9 @@ class IssuanceController extends Controller
 
     public function index(Request $request)
     {
-        $logs = CertificateIssuanceLog::with(['record.person', 'issuer'])->latest('issued_at')->get()->map(fn ($log) => [
+        $logs = CertificateIssuanceLog::with(['record.person', 'issuer'])
+            ->whereHas('record', fn ($query) => $query->where('parish_id', $request->user()->parish_id))
+            ->latest('issued_at')->get()->map(fn ($log) => [
             'id' => $log->id,
             'issuedTo' => $log->requestor_name,
             'purpose' => $log->purpose,

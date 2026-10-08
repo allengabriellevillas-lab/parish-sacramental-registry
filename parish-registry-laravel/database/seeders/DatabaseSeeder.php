@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
         ], [
             'full_name' => 'Parish Staff',
             'email' => 'staff@example.com',
+            'parish_id' => DB::table('parishes')->where('name', 'Parish of Our Lady of the Assumption')->value('id'),
+            'can_manage_parishes' => true,
             'password_hash' => Hash::make('password'),
             'role' => 'staff',
             'is_active' => true,

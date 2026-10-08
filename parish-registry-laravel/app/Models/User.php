@@ -19,6 +19,8 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'full_name',
+        'parish_id',
+        'can_manage_parishes',
         'username',
         'email',
         'avatar_path',
@@ -45,9 +47,11 @@ class User extends Authenticatable
     {
         return [
             'is_active' => 'boolean',
+            'can_manage_parishes' => 'boolean',
         ];
     }
 
     protected $table = 'staff_users';
     public function getAuthPassword(): string { return $this->password_hash; }
+    public function parish() { return $this->belongsTo(Parish::class); }
 }

@@ -10,6 +10,8 @@ class CertificateRequest extends Model
         'tracking_code',
         'reference_code',
         'sacrament_type',
+        'record_parish_id',
+        'record_parish_not_listed',
         'status',
         'requester_name',
         'requestor_name',
@@ -53,6 +55,11 @@ class CertificateRequest extends Model
     public function record()
     {
         return $this->belongsTo(SacramentalRecord::class, 'sacramental_record_id');
+    }
+
+    public function recordParish()
+    {
+        return $this->belongsTo(Parish::class, 'record_parish_id');
     }
 
     public function statusLogs()
